@@ -12,15 +12,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-
+using UnityEngine.UI;
 public class Ball : MonoBehaviour
 {
     [Header("General Settings")]
 
-
+    public int numOfBalls;
+    private int score;
+    public Text ballTxt;
+    public Text scoreTxt;
     [Header("Ball Settings")]
-   
+    public float initialForce;
+    public float speed;
+    public GameObject paddle;
+    private bool isInPlay;
+    private Rigidbody rb;
+    private AudioSource audioSource;
+        
+
 
 
  
@@ -29,7 +38,8 @@ public class Ball : MonoBehaviour
     //Awake is called when the game loads (before Start).  Awake only once during the lifetime of the script instance.
     void Awake()
     {
-
+        rb = GetComponent<Rigidbody>();
+        audioSource = GetComponent<AudioSource>();
     }//end Awake()
 
 
@@ -44,14 +54,35 @@ public class Ball : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        ballTxt.text = "Balls: " + numOfBalls;
+        scoreTxt.text = "Score: " + score;
+
+
+        if (!isInPlay)
+        {
+            float posX = paddle.transform.position.x;
+            float posY = transform.position.y;
+            float posZ = transform.position.z;
+            Vector3 pos = new Vector3(posX, posY, posZ);
+            transform.position = pos; //new position
+        }
         
+        if ( (Input.GetKeyDown("space")) && !isInPlay)
+        {
+            isInPlay = true;
+            Move();
+        }
+
     }//end Update()
 
 
     private void LateUpdate()
     {
+        if (isInPlay)
+        {
 
-
+            rb.velocity = speed * rb.velocity.normalized; //new velocity
+        }
     }//end LateUpdate()
 
 
@@ -68,8 +99,41 @@ public class Ball : MonoBehaviour
     }//end SetStartingPos()
 
 
+    void Move()
+    {
+        Vector3 force = new Vector3(0, initialForce, 0);
+        rb.AddForce(force);
+    }
 
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        GameObject colGo = collision.gameObject;
+        if (colGo.tag == "Brick")
+        {
+            score += 100;
+            Destroy(colGo); //destroys
+        }
+    }
 
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "OutBounds") //checks tag
+        {
+            numOfBalls--; //decrements
+        }
+
+        if (numOfBalls <= 0)
+        {
+            score = 0; //resets score for further implementation
+            
+            
+        }
+        else
+        {
+            Invoke("SetStartingPos", 2f); // resets
+        }
+        
+    }
 }
